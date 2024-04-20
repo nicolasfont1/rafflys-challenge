@@ -9,6 +9,7 @@
 		<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 	</head>
 	<body>
+		<audio src="reward.wav" id="winsound"></audio>
 		<div class="wheelContainer">
 			<canvas id="myCanvas" width="400" height="400"> Canvas not supported, use another browser. </canvas>
 		</div>
@@ -17,6 +18,13 @@
 				canvasId: "myCanvas",
 				numSegments: 8,
 				outerRadius: 150,
+				// Specify pin parameters.
+				pins: {
+					outerRadius: 5,
+					margin: 5,
+					fillStyle: "#7734c3",
+					strokeStyle: "#ffffff",
+				},
 				segments: [
 					{ fillStyle: "#eae56f", text: "Prize 1" },
 					{ fillStyle: "#89f26e", text: "Prize 2" },
@@ -33,7 +41,7 @@
 					spins: 8,
 
 					// Remember to do something after the animation has finished specify callback function.
-					callbackFinished: "alertPrize()",
+					callbackFinished: "winAnimation()",
 
 					// During the animation need to call the drawTriangle() to re-draw the pointer each frame.
 					callbackAfter: "drawTriangle()",
@@ -41,12 +49,27 @@
 			});
 
 			// This function called after the spin animation has stopped.
-			function alertPrize() {
-				// Call getIndicatedSegment() function to return pointer to the segment pointed to on wheel.
-				let winningSegment = theWheel.getIndicatedSegment();
+			function winAnimation() {
+				// Get the audio with the sound it in, then play.
+				let winsound = document.getElementById("winsound");
+				winsound.play();
 
-				// Basic alert of the segment text which is the prize name.
-				alert("You have won " + winningSegment.text + "!");
+				// Get the number of the winning segment.
+				let winningSegmentNumber = theWheel.getIndicatedSegmentNumber();
+
+				// Loop and set fillStyle of all segments to gray.
+				for (let x = 1; x < theWheel.segments.length; x++) {
+					theWheel.segments[x].fillStyle = "gray";
+				}
+
+				// Make the winning one yellow.
+				theWheel.segments[winningSegmentNumber].fillStyle = "yellow";
+
+				// Call draw function to render changes.
+				theWheel.draw();
+
+				// Also re-draw the pointer, otherwise it disappears.
+				drawTriangle();
 			}
 
 			// Function to draw pointer using code (like in a previous tutorial).
@@ -57,7 +80,7 @@
 				let ctx = theWheel.ctx;
 
 				ctx.strokeStyle = "navy"; // Set line colour.
-				ctx.fillStyle = "aqua"; // Set fill colour.
+				ctx.fillStyle = "green"; // Set fill colour.
 				ctx.lineWidth = 2;
 				ctx.beginPath(); // Begin path.
 				ctx.moveTo(170, 5); // Move to initial position.

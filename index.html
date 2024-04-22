@@ -7,6 +7,11 @@
 		<title>McRoulette!</title>
 		<script src="Winwheel.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
+			rel="stylesheet" />
 	</head>
 
 	<body>
@@ -18,13 +23,13 @@
 				</div>
 
 				<div id="interactiveArea" class="interactiveContainer">
-					<div class="prizeContainer">
-						<h3>{{winningOption.text}}</h3>
+					<div class="prizeContainer" id="prizeContainer">
+						<h3 id="prizeText">{{winningOption.text}}</h3>
 					</div>
 					<div class="textAreaContainer">
-						<textarea id="textArea" cols="30" rows="10" v-model="optionsText" @keydown="onEnter"></textarea>
-						<button class="spinButton" @click="theWheel.startAnimation();">Spin the Wheel</button>
-						<button class="resetButton" @click="resetWheel()">Reset</button>
+						<textarea id="textArea" cols="30" rows="10" v-model="optionsText" @keydown="onEnter" placeholder="Add prizes here..."></textarea>
+						<button class="spinButton" @click="theWheel.startAnimation();">Click to spin!</button>
+						<button class="resetButton" @click="resetWheel()">↺</button>
 					</div>
 				</div>
 			</section>
@@ -34,7 +39,7 @@
 					setup() {
 						const optionsText = ref("");
 						const winningOption = ref({
-							text: "Spin to win!",
+							text: "McRoulette!",
 							fillStyle: "",
 						});
 						let segmentCounter = 1;
@@ -49,6 +54,7 @@
 									for (let i = 0; i < theWheel.segments.length; i++) {
 										theWheel.deleteSegment();
 									}
+									theWheel.pins.number = 1;
 									// Si el segmento 1 está vacío (default)
 									theWheel.segments[1].fillStyle = "#c20d00";
 									theWheel.segments[1].textFillStyle = "#FFF";
@@ -57,6 +63,7 @@
 									drawTriangle();
 									return;
 								}
+								theWheel.pins.number = segmentCounter + 1;
 								let lastSegmentAdded = theWheel.addSegment();
 								(lastSegmentAdded.text = addedOptions.value[addedOptions.value.length - 1]),
 									(lastSegmentAdded.textFillStyle = "#FFF"),
@@ -68,14 +75,14 @@
 							}
 
 							if (event.key === "Backspace") {
-								if (optionsText.value === "") {
-									segmentCounter = 1;
+								if (optionsText.value === "" && theWheel.segments[1].text !== "") {
 									for (let i = 1; i < 12; i++) {
 										i % 2 === 1
 											? theWheel.addSegment({ fillStyle: "#ffce00", text: "" })
 											: theWheel.addSegment({ fillStyle: "#c20d00", text: "" });
 									}
 									theWheel.segments[1].text = "";
+									theWheel.pins.number = 12
 									theWheel.draw();
 									drawTriangle();
 								}
@@ -83,8 +90,11 @@
 									const textAreaWords = optionsText.value.trim().split("\n");
 									if (!textAreaWords.includes(addedOptions.value[addedOptions.value.length - 1])) {
 										addedOptions.value.pop();
+										segmentCounter -= 1
 										theWheel.deleteSegment();
+										theWheel.pins.number = segmentCounter
 										theWheel.draw();
+										drawTriangle();
 									}
 								}
 							}
@@ -107,10 +117,19 @@
 								{ fillStyle: "#c20d00" },
 								{ fillStyle: "#ffce00" },
 							],
-							lineWidth: 1,
-							outerRadius: 170,
+							strokeStyle: null,
+							lineWidth: 0,
+							outerRadius: 210,
 							innerRadius: 60,
 							textAlignment: "outer", // Set alignment: inner, outer, center.
+							// Specify pin parameters.
+							pins: {
+								number: 12,
+								outerRadius: 5,
+								margin: 6,
+								fillStyle: "#23512f",
+								strokeStyle: "#ffffff",
+							},
 							animation: {
 								type: "spinToStop",
 								duration: 5,
@@ -140,6 +159,10 @@
 							}
 							// Make the winning one yellow.
 							theWheel.segments[winningSegmentNumber].fillStyle = winningOption.value.fillStyle;
+							const prizeContainer = document.getElementById('prizeContainer')
+							prizeContainer.style.backgroundColor = '#c20d00'
+							const prizeText = document.getElementById('prizeText')
+							prizeText.classList.add('prizeAnimation')
 							// Call draw function to render changes.
 							theWheel.draw();
 							// Also re-draw the pointer, otherwise it disappears.
@@ -147,7 +170,7 @@
 						}
 
 						function resetWheel() {
-							winningOption.value = { text: "Spin to win!", fillStyle: "" };
+							winningOption.value = { text: "McRoulette!", fillStyle: "" };
 							theWheel.stopAnimation(false);
 							theWheel.rotationAngle = 0;
 							for (let i = 1; i < theWheel.segments.length; i++) {
@@ -157,6 +180,10 @@
 										: (theWheel.segments[i].fillStyle = "#ffce00");
 								}
 							}
+							const prizeContainer = document.getElementById('prizeContainer')
+							prizeContainer.style.backgroundColor = 'aliceblue'
+							const prizeText = document.getElementById('prizeText')
+							prizeText.classList.remove('prizeAnimation')
 							theWheel.draw();
 							drawTriangle();
 						}
@@ -167,14 +194,13 @@
 						function drawTriangle() {
 							// Get the canvas context the wheel uses.
 							let ctx = theWheel.ctx;
-							ctx.strokeStyle = "white"; // Set line colour.
 							ctx.fillStyle = "black"; // Set fill colour.
 							ctx.lineWidth = 2;
 							ctx.beginPath(); // Begin path.
-							ctx.moveTo(220, 50); // Move to initial position.
-							ctx.lineTo(280, 50); // Draw lines to make the shape.
-							ctx.lineTo(250, 90);
-							ctx.lineTo(221, 50);
+							ctx.moveTo(235, 10); // Move to initial position.
+							ctx.lineTo(265, 10); // Draw lines to make the shape.
+							ctx.lineTo(250, 50);
+							ctx.lineTo(236, 10);
 							ctx.stroke(); // Complete the path by stroking (draw lines).
 							ctx.fill(); // Then fill.
 						}

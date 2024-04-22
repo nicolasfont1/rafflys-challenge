@@ -1,61 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<title>McRoulette!</title>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="stylesheet" href="styles.css" />
-		<title>McRoulette!</title>
-		<script src="Winwheel.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+		<link rel="icon" type="image/png" href="/favicon.png">
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
 			href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
 			rel="stylesheet" />
+		<script src="Winwheel.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 	</head>
-
 	<body>
-		<audio src="reward.wav" id="winsound"></audio>
 		<main>
+			<audio src="reward.wav" id="winsound"></audio>
 			<section class="container">
-				<div class="wheelContainer">
+				<article class="wheelContainer">
 					<canvas id="myCanvas" width="500" height="500"> Canvas not supported, use another browser. </canvas>
-				</div>
+				</article>
 
-				<div id="interactiveArea" class="interactiveContainer">
-					<div class="prizeContainer" id="prizeContainer">
+				<article id="interactiveArea" class="interactiveContainer">
+					<div id="prizeContainer" class="prizeContainer">
 						<h3 id="prizeText">{{winningOption.text}}</h3>
 					</div>
 					<div class="textAreaContainer">
-						<textarea id="textArea" cols="30" rows="10" v-model="optionsText" @keydown="onEnter" placeholder="Add prizes here..."></textarea>
+						<textarea
+							id="textArea"
+							cols="30"
+							rows="10"
+							v-model="optionsText"
+							@keydown="onEnter"
+							placeholder="Add prizes here..."></textarea>
 						<button class="spinButton" @click="theWheel.startAnimation();">Click to spin!</button>
 						<button class="resetButton" @click="resetWheel()">↺</button>
 					</div>
-				</div>
+				</article>
 			</section>
 			<script type="module">
 				import { createApp, ref } from "https://unpkg.com/vue@3/dist/vue.esm-browser.js";
 				createApp({
 					setup() {
-						const optionsText = ref("");
-						const winningOption = ref({
+						const optionsText = ref(""); // Texto ingresado en el textarea.
+						const addedOptions = ref([]); // Opciones agregadas una vez presionado enter.
+						const winningOption = ref({ // Opción ganadora, guarda el color para marcarlo.
 							text: "McRoulette!",
 							fillStyle: "",
 						});
-						let segmentCounter = 1;
 
-						const addedOptions = ref([]);
+						let segmentCounter = 1; // Se usa para agregar pines y obtener el color del segment anterior.
 
+						// onEnter ejecuta los eventos que desencadenan las teclas Enter y Backspace.
 						function onEnter(event) {
 							if (event.key === "Enter") {
 								const textAreaWords = event.target.value.trim().split("\n");
 								addedOptions.value.push(textAreaWords[textAreaWords.length - 1]);
-								if (theWheel.segments[1].text === "") {
+								if (theWheel.segments[1].text === "") { // Si el segment 1 está vacío (default).
 									for (let i = 0; i < theWheel.segments.length; i++) {
 										theWheel.deleteSegment();
 									}
 									theWheel.pins.number = 1;
-									// Si el segmento 1 está vacío (default)
 									theWheel.segments[1].fillStyle = "#c20d00";
 									theWheel.segments[1].textFillStyle = "#FFF";
 									theWheel.segments[1].text = addedOptions.value[addedOptions.value.length - 1];
@@ -63,6 +69,7 @@
 									drawTriangle();
 									return;
 								}
+								// Si no es el segment 1, sigue acá.
 								theWheel.pins.number = segmentCounter + 1;
 								let lastSegmentAdded = theWheel.addSegment();
 								(lastSegmentAdded.text = addedOptions.value[addedOptions.value.length - 1]),
@@ -73,26 +80,25 @@
 								theWheel.draw();
 								drawTriangle();
 							}
-
 							if (event.key === "Backspace") {
-								if (optionsText.value === "" && theWheel.segments[1].text !== "") {
+								if (optionsText.value === "" && theWheel.segments[1].text !== "") { // Si eliminamos la primera opción.
 									for (let i = 1; i < 12; i++) {
 										i % 2 === 1
 											? theWheel.addSegment({ fillStyle: "#ffce00", text: "" })
 											: theWheel.addSegment({ fillStyle: "#c20d00", text: "" });
 									}
 									theWheel.segments[1].text = "";
-									theWheel.pins.number = 12
+									theWheel.pins.number = 12;
 									theWheel.draw();
 									drawTriangle();
 								}
-								if (optionsText.value[optionsText.value.length - 1] === "\n") {
+								if (optionsText.value[optionsText.value.length - 1] === "\n") { // Si eliminamos una opción que no sea la primera.
 									const textAreaWords = optionsText.value.trim().split("\n");
 									if (!textAreaWords.includes(addedOptions.value[addedOptions.value.length - 1])) {
 										addedOptions.value.pop();
-										segmentCounter -= 1
+										segmentCounter -= 1;
 										theWheel.deleteSegment();
-										theWheel.pins.number = segmentCounter
+										theWheel.pins.number = segmentCounter;
 										theWheel.draw();
 										drawTriangle();
 									}
@@ -100,8 +106,14 @@
 							}
 						}
 
+						// theWheel es el objeto de la spinning wheel.
 						let theWheel = new Winwheel({
 							canvasId: "myCanvas",
+							outerRadius: 210,
+							innerRadius: 60,
+							textAlignment: "outer",
+							strokeStyle: null,
+							lineWidth: 0,
 							numSegments: 12,
 							segments: [
 								{ fillStyle: "#c20d00" },
@@ -117,15 +129,9 @@
 								{ fillStyle: "#c20d00" },
 								{ fillStyle: "#ffce00" },
 							],
-							strokeStyle: null,
-							lineWidth: 0,
-							outerRadius: 210,
-							innerRadius: 60,
-							textAlignment: "outer", // Set alignment: inner, outer, center.
-							// Specify pin parameters.
 							pins: {
 								number: 12,
-								outerRadius: 5,
+								outerRadius: 4,
 								margin: 6,
 								fillStyle: "#23512f",
 								strokeStyle: "#ffffff",
@@ -134,38 +140,32 @@
 								type: "spinToStop",
 								duration: 5,
 								spins: 8,
-								// Remember to do something after the animation has finished specify callback function.
 								callbackFinished: winAnimation,
-								// During the animation need to call the drawTriangle() to re-draw the pointer each frame.
 								callbackAfter: drawTriangle,
+								callbackSound: playSound,
 							},
 						});
 
-						// This function called after the spin animation has stopped.
 						function winAnimation() {
-							// Get the audio with the sound it in, then play.
 							let winsound = document.getElementById("winsound");
 							winsound.play();
-							// Get the number of the winning segment.
 							let winningSegmentNumber = theWheel.getIndicatedSegmentNumber();
-
+							
 							winningOption.value.text = theWheel.segments[winningSegmentNumber].text;
 							winningOption.value.fillStyle = theWheel.segments[winningSegmentNumber].fillStyle;
-							// Loop and set fillStyle of all segments to gray.
 							for (let i = 1; i < theWheel.segments.length; i++) {
 								if (theWheel.segments[i] !== undefined) {
 									theWheel.segments[i].fillStyle = "gray";
 								}
 							}
-							// Make the winning one yellow.
 							theWheel.segments[winningSegmentNumber].fillStyle = winningOption.value.fillStyle;
-							const prizeContainer = document.getElementById('prizeContainer')
-							prizeContainer.style.backgroundColor = '#c20d00'
-							const prizeText = document.getElementById('prizeText')
-							prizeText.classList.add('prizeAnimation')
-							// Call draw function to render changes.
+							// Cambio de color y agregado de movimiento al H3 del premio.
+							const prizeContainer = document.getElementById("prizeContainer");
+							prizeContainer.style.backgroundColor = "#c20d00";
+							const prizeText = document.getElementById("prizeText");
+							prizeText.classList.add("prizeAnimation");
+
 							theWheel.draw();
-							// Also re-draw the pointer, otherwise it disappears.
 							drawTriangle();
 						}
 
@@ -180,30 +180,35 @@
 										: (theWheel.segments[i].fillStyle = "#ffce00");
 								}
 							}
-							const prizeContainer = document.getElementById('prizeContainer')
-							prizeContainer.style.backgroundColor = 'aliceblue'
-							const prizeText = document.getElementById('prizeText')
-							prizeText.classList.remove('prizeAnimation')
+							const prizeContainer = document.getElementById("prizeContainer");
+							prizeContainer.style.backgroundColor = "aliceblue";
+							const prizeText = document.getElementById("prizeText");
+							prizeText.classList.remove("prizeAnimation");
 							theWheel.draw();
 							drawTriangle();
 						}
-
-						// Function to draw pointer using code (like in a previous tutorial).
+						
 						drawTriangle();
-
 						function drawTriangle() {
-							// Get the canvas context the wheel uses.
 							let ctx = theWheel.ctx;
-							ctx.fillStyle = "black"; // Set fill colour.
+							ctx.fillStyle = "black";
 							ctx.lineWidth = 2;
-							ctx.beginPath(); // Begin path.
-							ctx.moveTo(235, 10); // Move to initial position.
-							ctx.lineTo(265, 10); // Draw lines to make the shape.
+							ctx.beginPath();
+							ctx.moveTo(235, 10);
+							ctx.lineTo(265, 10);
 							ctx.lineTo(250, 50);
 							ctx.lineTo(236, 10);
-							ctx.stroke(); // Complete the path by stroking (draw lines).
-							ctx.fill(); // Then fill.
+							ctx.stroke();
+							ctx.fill();
 						}
+
+						let audio = new Audio("tick.wav");
+						function playSound() {
+							audio.pause();
+							audio.currentTime = 0;
+							audio.play();
+						}
+						
 						return {
 							theWheel,
 							optionsText,
